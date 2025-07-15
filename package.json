@@ -4,7 +4,9 @@
     "description": "A Discord bot for AI chat and image text extraction.",
     "main": "index.js",
     "scripts": {
-        "start": "node index.js"
+    "start": "node index.js",
+    "build": "echo \"No build needed\""
+}
     },
     "keywords": [
         "discord-bot",

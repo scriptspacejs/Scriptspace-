@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ScriptSpace | Discord Community</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      max-width: 480px;
+      width: 100%;
+      backdrop-filter: blur(10px);
+    }
+
+    .server-icon {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 20px;
+      border: 3px solid #7289da;
+    }
+
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 10px;
+      font-weight: 800;
+    }
+
+    p {
+      font-size: 1em;
+      margin-bottom: 25px;
+      color: #ccc;
+    }
+
+    a.button {
+      display: inline-block;
+      padding: 15px 30px;
+      background-color: #5865f2;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 10px;
+      font-size: 1em;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    a.button:hover {
+      background-color: #4752c4;
+      transform: scale(1.05);
+    }
+
+    .stats {
+      margin: 20px 0;
+      font-size: 0.95em;
+      color: #aaa;
+    }
+
+    .footer {
+      font-size: 0.85em;
+      color: #888;
+      margin-top: 30px;
+    }
+
+    .footer a {
+      color: #7289da;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img class="server-icon" src="InShot_20250804_140235824.jpg" alt="ScriptSpace Logo" />
+    <h1>Welcome to ScriptSpace</h1>
+    <p>Your ultimate Discord hub for scripts, coding tools, and AI-powered discussions.</p>
+    <a class="button" href="https://discord.gg/jyH67p8kYZ" target="_blank">Join Our Discord</a>
+    <div class="stats">
+      Total Members: <span id="totalMembers">Fetching...</span><br>
+      Online Members: <span id="onlineMembers">Fetching...</span>
+    </div>
+    <div class="footer">
+      Contact: <a href="https://discord.gg/jyH67p8kYZ" target="_blank">discord.gg/jyH67p8kYZ</a><br>
+      Founder: script.js
+    </div>
+  </div>
+
+  <script>
+    // Fake data as placeholders
+    document.getElementById("totalMembers").textContent = "1,024";
+    document.getElementById("onlineMembers").textContent = "86";
+  </script>
+</body>
+</html>

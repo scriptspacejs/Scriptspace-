@@ -1,0 +1,635 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScriptSpace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Card Styling */
+        .glassmorphic {
+            background: rgba(147, 51, 234, 0.12);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+            border-radius: 1.5rem;
+            box-shadow: 0 12px 48px rgba(147, 51, 234, 0.35);
+            margin: 30px auto;
+            padding: 30px;
+            max-width: 1200px;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .glassmorphic:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 64px rgba(147, 51, 234, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glowing-title {
+            font-family: 'Roboto Mono', monospace;
+            background: linear-gradient(45deg, #9333ea, #f3e8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(147, 51, 234, 0.9), 0 0 30px rgba(147, 51, 234, 0.7);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        p, ul, li {
+            font-size: 1.1em;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        li::before {
+            content: "▹";
+            color: #9333ea;
+            margin-right: 10px;
+        }
+
+        /* Super Attractive Glassmorphic Terminal Styling */
+        .terminal-container {
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.15), rgba(147, 51, 234, 0.05));
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(147, 51, 234, 0.5);
+            border-radius: 1.2rem;
+            padding: 0.5rem;
+            box-shadow: 0 8px 32px rgba(147, 51, 234, 0.4), inset 0 0 12px rgba(147, 51, 234, 0.3);
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+            animation: terminalGlow 1.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes terminalGlow {
+            from { box-shadow: 0 8px 32px rgba(147, 51, 234, 0.4), inset 0 0 12px rgba(147, 51, 234, 0.3); }
+            to { box-shadow: 0 10px 40px rgba(147, 51, 234, 0.5), inset 0 0 14px rgba(147, 51, 234, 0.4); }
+        }
+
+        .terminal-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: linear-gradient(90deg, rgba(147, 51, 234, 0.2), rgba(147, 51, 234, 0.1));
+            border-bottom: 1px solid rgba(147, 51, 234, 0.6);
+            border-top-left-radius: 1.2rem;
+            border-top-right-radius: 1.2rem;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+        }
+
+        .terminal-container::before::after {
+            content: '⬤ ⬤ ⬤';
+            font-size: 10px;
+            color: rgba(147, 51, 234, 0.9);
+            letter-spacing: 4px;
+        }
+
+        .terminal-tabs {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            background: rgba(147, 51, 234, 0.08);
+            border-bottom: 1px solid rgba(147, 51, 234, 0.5);
+            padding: 0.3rem 0.5rem;
+        }
+
+        .terminal-tab {
+            background: linear-gradient(135deg, rgba(76, 29, 149, 0.3), rgba(76, 29, 149, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(147, 51, 234, 0.7);
+            border-radius: 24px;
+            padding: 0.4rem 1rem;
+            margin-right: 4px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 12px rgba(147, 51, 234, 0.6);
+            white-space: nowrap;
+        }
+
+        .terminal-tab:last-child {
+            margin-right: 0;
+        }
+
+        .terminal-tab:hover {
+            background: linear-gradient(135deg, rgba(76, 29, 149, 0.6), rgba(76, 29, 149, 0.4));
+            box-shadow: 0 0 18px rgba(147, 51, 234, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .terminal-tab.active {
+            background: linear-gradient(135deg, rgba(76, 29, 149, 0.7), rgba(76, 29, 149, 0.5));
+            border: 1px solid rgba(147, 51, 234, 0.9);
+            box-shadow: 0 0 20px rgba(147, 51, 234, 0.9);
+        }
+
+        .terminal-content {
+            display: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 180px;
+            overflow-y: auto;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: #ffffff;
+            padding: 0.8rem;
+        }
+
+        .terminal-content.active {
+            display: block;
+        }
+
+        /* Dark Glassmorphic Glowing Button Styling */
+        .glowing-button {
+            background: linear-gradient(135deg, rgba(76, 29, 149, 0.3), rgba(76, 29, 149, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(147, 51, 234, 0.7);
+            border-radius: 24px;
+            padding: 0.5rem 1.5rem;
+            color: #ffffff;
+            font-family: 'Roboto Mono', monospace;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 12px rgba(147, 51, 234, 0.6);
+        }
+
+        .glowing-button:hover {
+            background: linear-gradient(135deg, rgba(76, 29, 149, 0.6), rgba(76, 29, 149, 0.4));
+            box-shadow: 0 0 18px rgba(147, 51, 234, 0.8);
+            transform: translateY(-3px);
+        }
+
+        /* Connecting Dots Animation */
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.4;
+        }
+
+        /* Smooth Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(147, 51, 234, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(147, 51, 234, 0.6);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(147, 51, 234, 0.8);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .glassmorphic {
+                margin: 15px;
+                padding: 20px;
+            }
+
+            .glowing-title {
+                font-size: 1.8em;
+            }
+
+            .terminal-container {
+                max-width: 100%;
+            }
+
+            .terminal-content {
+                font-size: 0.8em;
+                max-height: 150px;
+            }
+
+            .glowing-button, .terminal-tab {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.75em;
+            }
+
+            .terminal-tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body class="text-white font-sans">
+    <canvas id="backgroundCanvas"></canvas>
+
+    <header class="py-8 text-center">
+        <h1 class="text-5xl font-bold glowing-title">Welcome to ScriptSpace</h1>
+        <p class="mt-2 text-lg text-purple-300">Your gateway to AI-enhanced scripts and modern development</p>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <section class="glassmorphic p-8 mb-8">
+            <h2 class="text-3xl font-bold glowing-title mb-4">About script.js (Keerthi Vasan.M)</h2>
+            <p class="text-purple-200">Keerthi Vasan.M, known as script.js, is the visionary founder of both <a href="https://discord.gg/Gb7ZkRhcy3" class="glowing-button inline-block">ScriptSpace</a> and <a href="https://discord.gg/YhrJJKaSGK" class="glowing-button inline-block">@ResistanceCommunity</a>, established in 2021. A graduate in Electronics and Communication Engineering from a reputed college, script.js has been instrumental in fostering a fair gaming environment in Tamil Nadu through the Resistance Community's dedicated efforts. With over six years of experience in Linux environments (Ubuntu, Kali, Kali NetHunter, Debian, BlackArch, Parrot OS), script.js excels in developing AI models, custom bots, websites, custom ROMs, and advanced ethical hacking solutions. Their expertise includes crafting untraceable payloads with Metasploit, penetration testing, and prompt engineering for AI-driven tools. Proficient in Python, Java, JavaScript, CSS, HTML, Node.js, React, Angular, C, C++, C#, and machine learning frameworks, script.js leads innovative projects in Docker and Kubernetes environments, building high-end neural networks and AI assistants. As the community owner, script.js invites developers to join the ScriptSpace development registry at <a href="https://discord.gg/Gb7ZkRhcy3" class="text-purple-300 hover:text-purple-100">discord.gg/Gb7ZkRhcy3</a> to collaborate on cutting-edge development projects.</p>
+        </section>
+
+        <section class="glassmorphic p-8 mb-8">
+            <h2 class="text-3xl font-bold glowing-title mb-4">ScriptSpace</h2>
+            <p class="text-purple-200">ScriptSpace (<a href="https://discord.gg/Gb7ZkRhcy3" class="glowing-button inline-block">discord.gg/Gb7ZkRhcy3</a>) is a dynamic, open-source hub for developers, AI engineers, and tech enthusiasts ranging from beginners to seasoned professionals. Our mission is to spearhead innovation through collaborative, cutting-edge projects, including custom Discord bots, sophisticated web platforms, advanced file-tracing scripts, and AI-driven solutions powered by the ScriptSpace bot. We support an extensive range of programming languages—from Python, Java, and JavaScript to Go, Ruby, and beyond—enabling developers to explore and master diverse technologies. Our community thrives on inclusivity, offering cross-platform tools for PC, mobile, and cloud-based development, backed by robust frameworks like Docker, Kubernetes, and CI/CD pipelines. Founded by script.js, ScriptSpace is dedicated to pushing the boundaries of technology, fostering creativity, and building a global community of innovators.</p>
+        </section>
+
+        <section class="glassmorphic p-8 mb-8">
+            <h2 class="text-3xl font-bold glowing-title mb-4">Resistance Community</h2>
+            <p class="text-purple-200">The Resistance Community (<a href="https://discord.gg/YhrJJKaSGK" class="glowing-button inline-block">@ResistanceCommunity</a>), founded in 2021 by script.js, is a passionate movement dedicated to fostering a just and equitable gaming environment within the Tamil Nadu gaming ecosystem. Our mission is to eradicate unfair practices, such as cheating, hacking, and exploitative behaviors, by cultivating strong partnerships with gaming guilds, developers, and organizations. Through community-driven campaigns, educational workshops, and strategic collaborations, we promote transparency, integrity, and inclusivity in gaming. Our initiatives empower players to compete fairly, ensuring a vibrant and supportive gaming culture. Join us to champion fairness and make a transformative impact in the Tamil Nadu gaming community and beyond.</p>
+        </section>
+
+        <section class="glassmorphic p-8 mb-8">
+            <h2 class="text-3xl font-bold glowing-title mb-4">Pentester Expertise</h2>
+            <p class="text-purple-200 mb-4">At ScriptSpace, our penetration testing expertise is unparalleled, with a focus on advanced cybersecurity and ethical hacking to secure digital ecosystems. Our MSF Engineers leverage the Metasploit Framework to conduct sophisticated penetration tests, identifying vulnerabilities in networks, applications, and systems with precision. We integrate AI-driven tools to enhance vulnerability scanning, exploit development, and threat analysis, ensuring robust security solutions. Our team is proficient in a wide array of penetration testing tools, including Burp Suite for web application testing, John the Ripper for password cracking, Nmap for network scanning, and Wireshark for packet analysis. We operate across diverse development environments, supporting all major operating systems (Windows, macOS, Linux) and Linux distributions such as Kali Linux, Parrot Security OS, and BlackArch, tailored for security research and testing. Our development pipelines utilize Docker and virtualized environments to simulate real-world scenarios, ensuring compatibility and scalability. Whether you're fortifying enterprise systems or exploring cutting-edge security research, ScriptSpace provides the expertise and tools to safeguard the digital frontier.</p>
+            <div class="flex flex-wrap gap-4 mb-4">
+                <a href="https://www.metasploit.com/" class="glowing-button">Metasploit</a>
+                <a href="https://portswigger.net/burp" class="glowing-button">Burp Suite</a>
+                <a href="https://www.openwall.com/john/" class="glowing-button">John the Ripper</a>
+                <a href="https://nmap.org/" class="glowing-button">Nmap</a>
+                <a href="https://www.wireshark.org/" class="glowing-button">Wireshark</a>
+            </div>
+            <ul>
+                <li>MSF Engineer: Advanced penetration testing with Metasploit Framework</li>
+                <li>Web Security: Burp Suite for comprehensive web application testing</li>
+                <li>Password Cracking: John the Ripper for robust credential analysis</li>
+                <li>Network Scanning: Nmap for network exploration and vulnerability detection</li>
+                <li>Packet Analysis: Wireshark for deep network traffic inspection</li>
+            </ul>
+        </section>
+
+        <section class="glassmorphic p-8 mb-8">
+            <h2 class="text-3xl font-bold glowing-title mb-4">Our Expertise</h2>
+            <p class="text-purple-200 mb-4">At ScriptSpace, our expertise spans a comprehensive range of technologies and disciplines, empowering developers to push boundaries in software development and AI innovation. We excel in integrating advanced AI solutions, such as machine learning models, natural language processing, and generative AI, into real-world applications, including our flagship ScriptSpace bot. Our team is proficient in all major programming languages, including but not limited to Python, Java, JavaScript, TypeScript, C++, Go, Ruby, and PHP, enabling us to tackle projects of any complexity. We leverage cutting-edge tools like Docker, Kubernetes, Git, and CI/CD pipelines for seamless development and deployment, alongside frameworks such as React, Node.js, Django, and Spring Boot for robust web and backend solutions. Our Metasploit expertise enhances our capabilities in cybersecurity, while our AI prompt engineering ensures optimized interactions with large language models, making ScriptSpace a hub for next-generation development.</p>
+            <ul>
+                <li>Java: Enterprise-grade development with Spring and Hibernate</li>
+                <li>Python: Versatile scripting, AI, and machine learning with TensorFlow and PyTorch</li>
+                <li>Web Development: Full-stack expertise with React, Node.js, and Django</li>
+                <li>MSF Engineer: Advanced cybersecurity with Metasploit framework</li>
+                <li>AI Prompt Engineer: Crafting optimized prompts for AI models</li>
+            </ul>
+        </section>
+
+        <section class="glassmorphic p-8 mb-8">
+            <h2 class="text-3xl font-bold glowing-title mb-4">Active ScriptSpace Deployments</h2>
+            <p class="text-purple-200 mb-4">Explore our interactive terminal showcasing live examples of ScriptSpace's cutting-edge deployments. Led by script.js, our device head, we have successfully deployed custom Discord bots, dynamic websites, and next-generation tracer scripts for efficient file and system analysis. The terminal below demonstrates code snippets across multiple programming languages, illustrating the setup and execution of our projects. From initializing a Discord bot to running script checks, these examples highlight the versatility and power of our development ecosystem, designed to inspire and guide developers in building their own solutions.</p>
+            <div class="terminal-container">
+                <div class="terminal-tabs">
+                    <button class="terminal-tab active" data-tab="setup">Setup</button>
+                    <button class="terminal-tab" data-tab="javascript">JavaScript</button>
+                    <button class="terminal-tab" data-tab="python">Python</button>
+                    <button class="terminal-tab" data-tab="java">Java</button>
+                    <button class="terminal-tab" data-tab="cpp">C++</button>
+                    <button class="terminal-tab" data-tab="ruby">Ruby</button>
+                    <button class="terminal-tab" data-tab="go">Go</button>
+                    <button class="terminal-tab" data-tab="typescript">TypeScript</button>
+                    <button class="terminal-tab" data-tab="scriptcheck">Script Check</button>
+                </div>
+                <div class="terminal-content active" id="setup">
+                    <pre>$ sudo apt update
+$ git clone https://github.com/scriptspacejs/bot.git
+$ cd bot
+$ npm install
+$ node index.js</pre>
+                </div>
+                <div class="terminal-content" id="javascript">
+                    <pre>const { Client } = require('discord.js');
+const bot = new Client();
+bot.on('ready', () => console.log(`🤖 Logged in as ${bot.user.tag}`));
+bot.login('YOUR_TOKEN_HERE');</pre>
+                </div>
+                <div class="terminal-content" id="python">
+                    <pre>import discord
+client = discord.Client()
+@client.event
+async def on_ready():
+    print(f'🤖 Logged in as ${client.user}`)
+client.run('YOUR_TOKEN_HERE')</pre>
+                </div>
+                <div class="terminal-content" id="java">
+                    <pre>public class Bot {
+    public static void main(String[] args) {
+        System.out.println("🤖 Bot started");
+    }
+}</pre>
+                </div>
+                <div class="terminal-content" id="cpp">
+                    <pre>#include <iostream>
+int main() {
+    std::cout << "🤖 Bot started" << std::endl;
+    return 0;
+}</pre>
+                </div>
+                <div class="terminal-content" id="ruby">
+                    <pre>puts "🤖 Bot started"</pre>
+                </div>
+                <div class="terminal-content" id="go">
+                    <pre>package main
+import "fmt"
+func main() {
+    fmt.Println("🤖 Bot started")
+}</pre>
+                </div>
+                <div class="terminal-content" id="typescript">
+                    <pre>import { Client } from 'discord.js';
+const bot = new Client();
+bot.on('ready', () => console.log(`🤖 Logged in as ${bot.user.tag}`));
+bot.login('YOUR_TOKEN_HERE');</pre>
+                </div>
+                <div class="terminal-content" id="scriptcheck">
+                    <pre>> Running script check...
+> Checking syntax: OK
+> Validating dependencies: OK
+> Executing test script...
+> Output: Hello, ScriptSpace!</pre>
+                </div>
+            </div>
+            <div class="mt-4 text-center">
+                <button class="glowing-button">Run</button>
+                <a href="#" class="glowing-button ml-4">🤖 Bot Dashboard</a>
+            </div>
+        </section>
+
+        <section class="glassmorphic p-8 mb-8">
+            <h2 class="text-3xl font-bold glowing-title mb-4">Community Stats</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="text-center">
+                    <p class="text-2xl text-purple-200">1500+ Total Members</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl text-purple-200">Online Now: <span id="onlineMembers">172</span></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="glassmorphic p-8 mb-8">
+            <h2 class="text-3xl font-bold glowing-title mb-4">ЯЗЅ!ЅТЛИС3 來 COMMUИ!ТҮ</h2>
+            <p class="text-purple-200 mb-4">Join with by clicking the links below to join part of development projects and programme in scriptspace official development projects of custom bots, website, next generation tracer tools and deployments of custom environments in the scriptspace</p>
+            <div class="flex flex-wrap gap-4">
+                <a href="https://discord.gg/Gb7ZkRhcy3" class="glowing-button">Discord</a>
+                <a href="https://youtube.com/@resistancecommunitydc?si=Uj33xXywILu49n4b" class="glowing-button">YouTube</a>
+                <a href="https://wa.me/916369957743" class="glowing-button">WhatsApp</a>
+                <a href="https://github.com/scriptspacejs" class="glowing-button">GitHub</a>
+            </div>
+            <p class="mt-4 text-purple-200">Contact Discord: <a href="https://discord.gg/Gb7ZkRhcy3" class="text-purple-300 hover:text-purple-100">discord.gg/Gb7ZkRhcy3</a></p>
+            <p class="text-purple-200">Email: <a href="mailto:discord.ggscriptspace@gmail.com" class="text-purple-300 hover:text-purple-100">discord.ggscriptspace@gmail.com</a></p>
+            <p class="text-purple-200">WhatsApp: <a href="tel:+916369957743" class="text-purple-300 hover:text-purple-100">+91 6369957743</a></p>
+            <p class="text-purple-200">Founder: script.js</p>
+        </section>
+    </main>
+
+    <footer class="text-center py-4">
+        <p class="text-purple-300">Founder: script.js</p>
+    </footer>
+
+    <script>
+        // XLSX File Handling
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+
+        // Terminal Tab Switching
+        const tabs = document.querySelectorAll('.terminal-tab');
+        const contents = document.querySelectorAll('.terminal-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Smooth Scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    const offset = targetElement.getBoundingClientRect().top + window.pageYOffset - 80;
+                    window.scrollTo({
+                        top: offset,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Dynamic Online Members Counter
+        const onlineMembersElement = document.getElementById('onlineMembers');
+        let currentMembers = 172;
+        let targetMembers = 172;
+
+        function easeInOut(t) {
+            return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        }
+
+        function updateMembers() {
+            const min = 59;
+            const max = 173;
+            targetMembers = Math.floor(Math.random() * (max - min + 1)) + min;
+
+            let startTime;
+            const duration = 2000;
+
+            function animate(currentTime) {
+                if (!startTime) startTime = currentTime;
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easeInOut(progress);
+                const current = Math.round(currentMembers + (targetMembers - currentMembers) * easedProgress);
+                onlineMembersElement.textContent = current;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    currentMembers = targetMembers;
+                    setTimeout(updateMembers, 3000);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        updateMembers();
+
+        // Connecting Dots Animation (Medium Speed)
+        const canvas = document.getElementById('backgroundCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const dots = [];
+        const numDots = 50;
+
+        class Dot {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.radius = 3;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(147, 51, 234, 0.9)';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(147, 51, 234, 0.7)';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+        }
+
+        for (let i = 0; i < numDots; i++) {
+            dots.push(new Dot());
+        }
+
+        function connectDots() {
+            for (let i = 0; i < dots.length; i++) {
+                for (let j = i + 1; j < dots.length; j++) {
+                    const dx = dots[i].x - dots[j].x;
+                    const dy = dots[i].y - dots[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(dots[i].x, dots[i].y);
+                        ctx.lineTo(dots[j].x, dots[j].y);
+                        ctx.strokeStyle = `rgba(147, 51, 234, ${1 - distance / 120})`;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            dots.forEach(dot => {
+                dot.update();
+                dot.draw();
+            });
+            connectDots();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
